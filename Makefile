@@ -7,6 +7,10 @@ SHELL=bash
 help: Makefile
 	@sed -n 's/^## //p' Makefile
 
+## manpage:  set local kevlar manpage. might require sudo to edit /usr/local/man/
+manpage:
+	python3 manpage.py
+
 ## devenv:   install software development pre-requisites
 devenv:
 	pip install --upgrade pip setuptools pytest>=4.0.0 pytest-cov pytest-xdist pycodestyle cython sphinx sphinx-argparse
