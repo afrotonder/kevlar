@@ -5,7 +5,7 @@
 [![Docker build status][dockerbadge]](https://quay.io/repository/dib-lab/kevlar)
 [![MIT licensed][licensebadge]](https://github.com/dib-lab/kevlar/blob/master/LICENSE)
 
-<img src="docs/_static/morpheus-kevlar.jpg" alt=" What if I told you we don't need alignments to find variants?" width="400px" />
+<!-- <img src="docs/_static/morpheus-kevlar.jpg" alt=" What if I told you we don't need alignments to find variants?" width="400px" /> -->
 
 # kevlar
 
@@ -16,46 +16,28 @@ Welcome to **kevlar**, software for predicting *de novo* genetic variants withou
 kevlar's *k*-mer abundance based method calls single nucleotide variants (SNVs), multinucleotide variants (MNVs), insertion/deletion variants (indels), and structural variants (SVs) simultaneously with a single simple model.
 This software is free for use under the MIT license.
 
-<details>
-  <summary>Where can I find kevlar online?</summary>
-  <ul>
-    <li>Source repository: https://github.com/dib-lab/kevlar</li>
-    <li>Documentation: https://kevlar.readthedocs.io</li>
-    <li>Stable releases: https://github.com/dib-lab/kevlar/releases</li>
-    <li>Issue tracker: https://github.com/dib-lab/kevlar/issues</li>
-  </ul>
+You can checkout or download kevlar at our <a href='https://github.com/dib-lab/kevlar
+'> GitHub </a>
 
-  If you have questions or need help with kevlar, the [GitHub issue tracker](https://github.com/dib-lab/kevlar) should be your first point of contact.
-</details>
+<h1>Download Kevlar for regular use</h1>
 
-<details>
-  <summary>How do I install kevlar?</summary>
+If youre just looking to test kevlar and not edit its code for your use,
+follow the steps below and enjoy!
 
-  See [the kevlar documentation](http://kevlar.readthedocs.io/en/latest/install.html) for complete instructions, but the impatient can try the following.
+<h3>Unix like OS:</h3>
 
-  ```
-  pip3 install git+https://github.com/dib-lab/khmer.git
-  pip3 install biokevlar
-  ```
-</details>
+    $ pip3 install git+https://github.com/dib-lab/khmer.git
 
-<details>
-  <summary>How do I use kevlar?</summary>
-  <ul>
-    <li>Installation instructions: http://kevlar.readthedocs.io/en/latest/install.html</li>
-    <li>Quick start guide: http://kevlar.readthedocs.io/en/latest/quick-start.html</li>
-    <li>Tutorial: http://kevlar.readthedocs.io/en/latest/tutorial.html</li>
-  </ul>
-</details>
+    $ pip3 install biokevlar
 
-<details>
-  <summary>How can I contribute?</summary>
+<h3>Windows OS:</h3>
   
-  We welcome contributions to the kevlar project from the community!
-  If you're interested in modifying kevlar or contributing to its ongoing development, feel free to send us a message or submit a pull request!
+     ¯\_(ツ)_/¯
+<h1>How to run Kevlar</h1>
 
-  The kevlar software is a project of the [Lab for Data Intensive Biology](http://ivory.idyll.org/lab/) and the [Computational Genomics Lab](http://www.hormozdiarilab.org/) at UC Davis.
-</details>
+<h1>Setup development environment for Kevlar</h1>
+
+
 
 
 [travisbadge]: https://img.shields.io/travis/dib-lab/kevlar.svg
