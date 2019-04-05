@@ -17,6 +17,7 @@ kevlar's *k*-mer abundance based method calls single nucleotide variants (SNVs),
 This software is free for use under the MIT license.
 
 You can checkout or download kevlar at our <a href='https://github.com/dib-lab/kevlar
+Link to documentation: https://kevlar.readthedocs.io
 '> GitHub </a>
 
 <h1>Download Kevlar for regular use</h1>

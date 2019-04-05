@@ -4,7 +4,7 @@
 .SH NAME
 kevlar - reference-free variant discovery in large eukaryotic genomes 
 .SH SYNOPSIS
- kevlar [-h] [-v] [-l F] [--tee] COMMAND
+ kevlar [-h] [-v] [-l F] [--tee] COMMAND [command options]
 .SH DESCRIPTION
 Welcome to kevlar, software for predicting de novo genetic variants without mapping reads to a reference genome! 
 kevlar's k-mer abundance based method calls single nucleotide variants (SNVs), multinucleotide variants (MNVs), 
@@ -20,39 +20,428 @@ This software is free for use under the MIT license.
 --tee              write diagnostic output to logfile AND terminal (stderr)
 
 .SH COMMANDS
-  alac :
 
-  assemble :
+kevlar uses subcommands to manage genomic data. All of kevlar's subcommands are listed below, each with its respective options.
 
-  augment :
+alac :
 
-  call :
+----------------------------------------------------------------
 
-  count :
+assemble: Assemble reads into contigs representing putative variants
 
-  dist :
+.B      =USAGE
 
-  filter :
+        kevlar assemble [-h] [-p ID] [--max-reads N] [-o FILE] augfastq
 
-  gentrio :
+        augfastq	
+                annotated reads in augmented Fastq/Fasta format
 
-  localize :
+        -p, --part-id	
+                only assemble partition “ID” in the input
 
-  mutate : 
+        --max-reads	
+                do not attempt to assemble any partitions with more than N reads [default: 10000] ;
 
-  novel :
+        -o, --out	
+                output file [default: terminal (stdout)]
 
-  partition :
+.B      =EXAMPLES
 
-  simlike :
+----------------------------------------------------------------
 
-  split :
+augment :
 
-  unband :
+call: Align variant-related reads to the reference genome and call the variant from the alignment.
 
-  varfilter :
+.B      =USAGE
+        
+        kevlar call [-A A] [-B B] [-O O] [-E E] [--gen-mask FILE]
+          [--mask-mem MEM] [--mask-max-fpr FPR] [-h] [-d]
+          [--no-homopoly-filter] [--max-target-length L]
+          [--refr FILE] [-o FILE] [-k K] QUERYSEQ TARGETSEQ
+          
+
+        queryseq	
+                contigs assembled by “kevlar assemble” ;
+        
+        targetseq	
+                region of reference genome identified by “kevlar localize” ;
+                
+.B      ==ALIGNMENT SCORING
+
+        -A, --match	
+                match score [default : 1] ;
+
+        -B, --mismatch
+              	mismatch penalty [default: 2] ;
+
+        -O, --open
+              	gap open penalty [default: 5] ;
+
+        -E, --extend
+              	gap extension penalty [default: 0] ;
+
+.B      ==MASK GENERATION SETTINGS
+
+        --gen-mask	
+                generate a nodetable containing all k-mers that span any variant call ;
+        
+        --mask-mem	
+                memory to allocate for the node table ;
+        
+        --mask-max-fpr
+              	terminate if the estimated false positive rate is higher than “FPR” [default: 0.01] ;
+
+.B      ==MISCELLANEOUS SETTINGS
+
+        -d, --debug	
+                show debugging output ;
+        
+        --no-homopoly-filter
+                by default, short indels adjacent to homopolymers are filtered out; 
+                use this flag to disable that filter ;
+        
+        --max-target-length
+                do not attempt to call variants if the target genomic sequence is > L bp [default: L=10000] ;
+
+        --refr	
+                reference genome indexed for BWA search; if provided, mates of interesting reads 
+                will be used to diambiguate multi-mapping contigs ;
+
+        -o, --out	
+                output file [default: terminal (stdout)] ;
+        
+        -k, --ksize	
+                k-mer size [default: 31] ;
+
+.B      =EXAMPLES
+
+----------------------------------------------------------------
+
+count:  Compute k-mer abundances for the provided sample. Supports k-mer banding*.
+
+.B      =USAGE
+
+        kevlar count [-h] [-k K] [-c C] [-M MEM] [--max-fpr FPR] [--mask MSK] [--count-masked] [--num-bands N] 
+                     [--band I] [-t T] COUNTTABLE SEQFILE [SEQFILE ...]
+
+                
+        COUNTTABLE
+                Name of the file to which the output (a k-mer count table) will be written; 
+                the suffix “.counttable” will be applied if the provided file name does 
+                not end in “.ct” or “.counttable”
+                      
+        SEQFILE           
+                input files in Fastq/Fasta format ;
+
+        -k, --ksize	        
+                k-mer size [default is 31] ;
+        -c, --counter-size    
+                number of bits to allocate for counting each k-mer ;  
+
+                options are 1 (max count: 1), 4 (max count: 15), and 8 (max count: 255) [default] ; 
+
+        -M, --memory
+                memory to allocate for the count table ;
+
+        --max-fpr           
+                terminate if the estimated false positive rate for any 
+                sample is higher than “FPR”; default is 0.2 ;
+
+        --mask                
+                counttable or nodetable of k-mers to ignore when counting k-mers ;
+
+        --count-masked        
+                by default, when a mask is provided k-mers in the mask are ignored ;
+                this setting inverts the behavior so that only k-mers in the mask are counted ;
+
+        --num-bands         
+                number of bands into which to divide the hashed k-mer space ;
+
+        --band  	          
+                a number between 1 and N (inclusive) indicating the band to be processed ;
+
+        -t, --threads	      
+                number of threads to use for file processing [default: 1] ;
+       
+.B      =EXAMPLES
+        
+        [1] kevlar count --memory 500M case1.ct case1-reads.fastq
+
+        [2] kevlar count --ksize 25 --memory 12G --max-fpr 0.01 --threads 8 proband.counttable 
+              proband-R1.fq.gz proband-R2.fq.gz proband-unpaired.fq.gz
+
+----------------------------------------------------------------
+
+dist :
+
+----------------------------------------------------------------
+
+
+filter: Discard k-mers and reads that are contaminant in origin or whose abundances were 
+        inflated during the preliminary k-mer counting stage.
+
+.B      =USAGE
+                
+        kevlar filter [-h] [-M MEM] [--max-fpr FPR] [--mask MSK] [-x X] [-y Y] [-o FILE] augfastq
+
+        augfastq
+                one or more FASTA/FASTQ 
+
+        -M, --memory
+            	  memory to allocate for the k-mer re-counting
+
+        --max-fpr	
+                terminate early if the estimated false positive rate for re-computed 
+                k-mer abundances is higher than “FPR” [default: 0.01] ; 
+
+        --mask	
+                counttable or nodetable of k-mers to ignore when re-counting k-mers ;
+
+        -x, --ctrl-max	
+                k-mers with abund > X in any control sample are uninteresting [default: X=1] ;
+        
+        -y, --case-min	
+                k-mers with abund < Y in any case sample are uninteresting [default: Y=6] ;
+        
+        -o, --out	
+                output file; default is terminal (stdout) ;      
+
+.B      =EXAMPLES
+
+----------------------------------------------------------------
+
+gentrio :
+
+----------------------------------------------------------------
+
+localize: For each partition, compute the reference target sequence to use for variant calling. 
+          NOTE: this command relies on the bwa program being in the PATH environmental variable.
+
+.B      =USAGE
+
+        kevlar localize [-h] [-d Δ] [-p ID] [-o FILE] [-z Z] [-x X]
+          [--include REGEX] [--exclude REGEX] REFR CONTIGS [CONTIGS ...]
+
+        REFR	
+                BWA indexed reference genome ;
+
+        CONTIGS	
+                assembled reads in augmented Fasta format ;
+
+        -d, --delta	
+                retrieve the genomic interval from the reference by extending beyond the span 
+                of all k-mer starting pos-p, --part-id	only localize partition “ID” in the input ;
+
+        -o, --out	
+                output file; default is terminal (stdout)  ;
+
+        -z, --seed-size
+                seed size [default: 51] ;
+
+        -x, --max-diff	
+                split and report multiple reference targets if the distance between two seed matches is > X;
+                by default, X is set dynamically for each partition and is equal to 3 times the length of the
+                longest contig in the partition; each resulting bin specifies a reference target sequence 
+                to which assembled contigs will subsequently be aligned ;
+                
+        --include	
+                discard alignments to any chromosomes whose sequence IDs do not match the given ;
+
+        --exclude	
+                discard alignments to any chromosomes whose sequence IDs match the given pattern ;
+
+.B      =EXAMPLES
+
+----------------------------------------------------------------
+
+mutate : 
+
+----------------------------------------------------------------
+
+novel:  Identify “interesting” (potentially novel) k-mers and output the corresponding reads.
+        Here we define “interesting” k-mers as those which are high abundance in each case 
+        sample and effectively absent (below some specified abundance threshold) in each control sample.
+
+.B      =USAGE
+
+        kevlar novel --case F [F ...] [--case-counts F [F ...]]
+                    [--control F [F ...]] [--control-counts F [F ...]] [-x X]
+                    [-y Y] [-M MEM] [--max-fpr FPR] [--num-bands N] [--band I]
+                    [-o FILE] [--save-case-counts CT [CT ...]]
+                    [--save-ctrl-counts CT [CT ...]] [-h] [-k K]
+                    [--abund-screen INT] [-t T] [--skip-until ID]
+      
+
+.B      ==CASE/CONTROL CONFIG 
+
+        Specify input files, as well as thresholds for selecting “interesting” k-mers. 
+        A single pass is made over input files for control samples (to compute k-mer abundances), 
+        while two passes are made over input files for case samples (to compute k-mer abundances, 
+        and then to identify “interesting” k-mers). The k-mer abundance computing steps can be skipped 
+        if pre-computed k-mer abunandances are provided using the “–case-counts” and/or “–control-counts” settings. 
+        If “–control-counts” is declared, then all “–control” flags are ignored. 
+        If “–case-counts” is declared, FASTA/FASTQ files must still be provided with 
+        “–case” for selecting “interesting” k-mers and reads.
+
+        -F
+                one or more FASTA/FASTQ files/COUNTTABLE files ;
+
+        --case	
+                one or more FASTA/FASTQ files containing reads from a case sample ;  
+                can be declared multiple times corresponding to multiple case samples ;
+        
+        --case-counts	
+                counttable file(s) corresponding to each case sample; if not provided, k-mer abundances 
+                will be computed from FASTA/FASTQ input; only one counttable per sample ;
+        
+        --control	
+                one or more FASTA/FASTQ files containing reads from a control sample ; 
+                can be declared multiple times corresponding to multiple control samples ;
+        
+        --control-counts
+                counttable file(s) corresponding to each control sample; if not provided,
+                k-mer abundances will be computed from FASTA/FASTQ input; only one counttable per sample ;
+        
+        -x, --ctrl-max	
+                k-mers with abund > X in any control sample are uninteresting [default: X=1] ;
+        
+        -y, --case-min	
+                k-mers with abund < Y in any case sample are uninteresting [default: Y=6] ;
+
+        -M, --memory	
+                total memory allocated to k-mer abundance for each sample [default: 1M] ; 
+                ignored when pre-computed k-mer abundances are supplied via counttable ;
+        
+        --max-fpr
+                terminate if the expected false positive rate for any sample is higher 
+                than the specified FPR [default is 0.2] ;
+
+
+.B      ==KMER BANDING
+
+        If memory is a limiting factor, it is possible to get a linear decrease in memory consumption
+        by running kevlar novel in “banded” mode. Splitting the hashed k-mer space into N bands and 
+        only considering k-mers from one band at a time reduces the memory consumption to approximately 
+        1/N of the total memory required. This implements a scatter/gather approach in which kevlar 
+        novel is run N times, after the results are combined using kevlar filter.
+
+        For each batch, kevlar ignores all k-mers except those whose hash values fall within a 
+        specified numerical range (band), reducing the memory required to achieve accurate k-mer counts.
+
+        The kevlar count and kevlar novel commands support k-mer banding, and the kevlar unband command merges 
+        novel reads from multiple batches into a single read set suitable for downstream analysis.
+
+        --num-bands	
+                number of bands into which to divide the hashed k-mer space
+        
+        --band	
+                a number between 1 and N (inclusive) indicating the band to be processed
+
+.B      ==OUTPUT SETTINGS
+
+        -o, --out	
+                file to which interesting reads will be written [default: terminal (stdout)] ;
+
+        --save-case-counts
+ 	              save the computed k-mer counts for each case sample to the specified count table file(s)
+
+        --save-ctrl-counts        
+ 	              save the computed k-mer counts for each control sample to the specified count table file(s)
+
+.B      ==MISCELLANEOUS SETTINGS
+
+        -k, --ksize
+                	k-mer size; default is 31
+
+        --abund-screen	
+                discard reads with any k-mers whose abundance is < INT
+
+        -t, --threads	
+                number of threads to use for file processing [default: 1] ;
+
+        --skip-until	
+                when re-running kevlar novel, skip all reads in the case input 
+                until read with name ID is observed ;
+
+.B      =EXAMPLES
+
+        [1] kevlar novel --out novel-reads.augfastq --case proband-reads.fq.gz
+              --control father-reads-r1.fq.gz father-reads-r2.fq.gz
+              --control mother-reads.fq.gz
+
+        [2] kevlar novel --out novel-reads.augfastq.gz
+              --control-counts father.counttable mother.counttable
+              --case-counts proband.counttable --case proband-reads.fastq
+              --ctrl-max 0 --case-min 10 --ksize 27
+
+        [3] kevlar novel --out output.augfastq
+              --case proband1.fq --case proband2.fq
+              --control control1a.fq control1b.fq
+              --control control2a.fq control2b.fq
+              --save-case-counts p1.ct p2.ct --save-ctrl-counts c1.ct c2.ct
+
+----------------------------------------------------------------
+
+
+partition:  Construct a graph to group reads by shared interesting k-mers. Nodes in the graph represent 
+            reads, and edges between a pair of nodes indicate that the two corresponding reads have one 
+            or more interesting k-mers in common. Connected components in the undirected graph 
+            correspond to distinct variants (or variant-related breakpoints).
+
+.B      =USAGE
+
+         kevlar partition [-h] [-s] [--min-abund X] [--max-abund Y] [--no-dedup]
+            [--gml FILE] [--split OUTPREFIX] [-o FILE] INFILE
+
+        INFILE
+          	    input reads in augmented Fast[q|a] format ;
+
+        -s, --strict	
+                require perfect identity between overlapping reads for inclusion in the same partition ; 
+                by default, only a shared interesting k-mer is required ;
+
+        --min-abund	
+                ignore k-mers with abundance lower than X [default is 2] ;
+
+        --max-abund	
+                ignore k-mers with abundance higher than Y [default is 200] ;
+        
+        --no-dedup
+              	skip step to remove duplicates ;
+
+        --gml	
+                write read graph to .gml file ;
+
+        --split	
+                write each partition to a separate output file, each with a filename 
+                like “OUTPREFIX.cc#.augfastq.gz”
+        
+        -o, --out	
+                output file [default is terminal (stdout)] ;
+
+.B      =EXAMPLES
+
+----------------------------------------------------------------
+
+simlike :
+
+----------------------------------------------------------------
+
+split :
+
+----------------------------------------------------------------
+
+unband :
+
+----------------------------------------------------------------
+
+varfilter :
+
+----------------------------------------------------------------
 
 .SH FILES
+
 
 .SH SEE ALSO
  
