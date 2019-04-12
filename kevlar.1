@@ -23,8 +23,96 @@ This software is free for use under the MIT license.
 
 kevlar uses subcommands to manage genomic data. All of kevlar's subcommands are listed below, each with its respective options.
 
-alac :
 
+alac: Assemble partitioned reads, localize to the reference genome, align the assembled 
+      contig to the reference, and call variants.
+
+.B      =USAGE
+
+        kevlar alac [-p ID] [--max-reads N] [-z Z] [-d D] [-x X]
+                [--include REGEX] [--exclude REGEX] [--max-target-length L]
+                [-A A] [-B B] [-O O] [-E E] [--gen-mask FILE]
+                [--mask-mem MEM] [--mask-max-fpr FPR] [-h] [-o FILE] [-i I]
+                [-k K] [-t T]
+                infile refr
+
+        infile	
+                partitioned reads in augmented Fastq format
+
+        refr	
+                reference genome in Fasta format (indexed for bwa search)
+        
+.B      ==READ ASSEMBLY
+
+        -p, --part-id	
+                only process partition “ID” in the input ;
+        
+        --max-reads
+                do not attempt to assemble any partitions with more than N reads [default: 10000 ] ;
+        
+.B      ==TARGET EXTRACTION
+        
+        -z, --seed-size
+                seed size [default: 51] ;
+        
+        -d, --delta	
+                retrieve the genomic interval from the reference by extending beyond the span of all 
+                k-mer starting positions by D bp ;
+        
+        -x, --max-diff	
+                split and report multiple reference targets if the distance between two seed 
+                matches is > X; by default, X is set dynamically for each partition and is equal to 3 
+                times the length of the longest contig in the partition; each resulting bin specifies 
+                a reference target sequence to which assembled contigs will subsequently be aligned ;
+        
+        --include	
+                discard alignments to any chromosomes whose sequence IDs do not match the given pattern ;
+        
+        --exclude	
+                discard alignments to any chromosomes whose sequence IDs match the given pattern ;
+        
+        --max-target-length
+                do not attempt to call variants if the target genomic sequence is > L bp [default: L=10000] ;
+        
+.B      ==ALIGNMENT SCORING
+
+        -A, --match	
+                match score [default is 1] ;
+        
+        -B, --mismatch	
+                mismatch penalty [default: 2] ;
+
+        -O, --open	
+                gap open penalty [default is 5] ;
+
+        -E, --extend	
+                gap extension penalty [default: 0 ] ;
+
+.B      ==MASK GENERATION SETTINGS
+
+        --gen-mask
+        	generate a nodetable containing all k-mers that span any variant call ;
+        
+        --mask-mem
+        	memory to allocate for the node table ;
+        
+        --mask-max-fpr
+        	terminate if the estimated false positive rate is higher than “FPR” [default: 0.01] ;
+        
+.B       ==MISC 
+        
+        -o, --out
+        	output file; default is terminal (stdout) ;
+        
+        -i, --min-ikmers
+                do not report calls that a supported by fewer than I interesting k-mers ;
+        
+        -k, --ksize	
+                k-mer size [default: 31] ;
+        
+        -t, --threads	
+                rocess T partitions at a time using T threads ;
+        
 ----------------------------------------------------------------
 
 assemble: Assemble reads into contigs representing putative variants
@@ -49,7 +137,25 @@ assemble: Assemble reads into contigs representing putative variants
 
 ----------------------------------------------------------------
 
-augment :
+augment: Internally, kevlar annotates sequences with “interesting k-mers” and uses “augmented” Fastq and Fasta formats. 
+         Processing sequences with third-part tools usually requires discarding these annotations. This command is used
+         to augment/reaugment a set of sequences using annotations from an already augmented sequence file.
+        
+.B      =USAGE 
+
+        kevlar augment [-h] [-o FILE] augseqs seqs
+        
+        augseqs	
+                augmented sequence file
+
+        seqs
+                sequences to annotate
+
+        -o, --out
+        	output file; default is terminal (stdout)
+
+----------------------------------------------------------------
+
 
 call: Align variant-related reads to the reference genome and call the variant from the alignment.
 
@@ -173,7 +279,7 @@ count:  Compute k-mer abundances for the provided sample. Supports k-mer banding
 
 ----------------------------------------------------------------
 
-dist :
+dist : ??
 
 ----------------------------------------------------------------
 
@@ -211,7 +317,7 @@ filter: Discard k-mers and reads that are contaminant in origin or whose abundan
 
 ----------------------------------------------------------------
 
-gentrio :
+gentrio : ??
 
 ----------------------------------------------------------------
 
@@ -255,7 +361,21 @@ localize: For each partition, compute the reference target sequence to use for v
 
 ----------------------------------------------------------------
 
-mutate : 
+mutate: Apply the specified mutations to the genome provided.
+
+.B      =USAGE
+                kevlar mutate [-h] [-o FILE] mutations genome
+        
+        mutations	
+                mutations file ;
+
+        genome	
+                genome to mutate ;
+
+        -o, --out
+        	output file; default is terminal (stdout)
+ 
+ .B     =EXAMPLES
 
 ----------------------------------------------------------------
 
@@ -424,28 +544,146 @@ partition:  Construct a graph to group reads by shared interesting k-mers. Nodes
 
 ----------------------------------------------------------------
 
-simlike :
+simlike :Sort variants by likelihood score
+
+.B      =USAGE
+        
+        kevlar simlike --case CT --controls CT [CT ...] --refr REFR
+                [--ctrl-max X] [--case-min Y] [--mu μ] [--sigma σ]
+                [--epsilon ε] [--ctrl-abund-high H] [--case-abund-low L]
+                [--min-like-score S] [--drop-outliers]
+                [--ambig-thresh A] [-h] [--sample-labels LBL [LBL ...]]
+                [-f] [-o OUT]
+                vcf [vcf ...]
+
+        vcf
+                Variant count file (Not sure. no official definition in doc) ;	
+                
+.B      ==K-MER COUNT FIES
+
+        Likelihood scores are based on the abundance of alternate allele k-mers in each sample and on 
+        the abundance of reference allele k-mers in the reference genome.
+
+        --case
+        	k-mer counttable for case/proband ;
+
+        --controls
+        	k-mer counttables for controls/parents/siblings, 1 counttable per sample ;
+
+        --refr	
+                k-mer smallcounttable for reference genome ;
+
+.B      ==K-MER COUNT THRESHOLDS
+
+        The thresholds originally used to detect novel k-mers are used at this stage
+        to distinguish true variants from spurious predictions.
+
+        --ctrl-max	
+                maximum abundance threshold for controls [default: 1] ;
+
+        --case-min	
+                minimum abundance threshold for proband [default: 6] ;
+
+.B      ==K-MER COVERAGE 
+
+        Likelihood scores also depend on the estimated or observed distribution of k-mer abundances in each sample.
+
+        --mu	
+                mean k-mer abundance [default: 30.0] ;
+
+        --sigma	
+                standard deviation of k-mer abundance [default: 8.0] ;
+
+        --epsilon
+        	error rate; default is 0.001 ;
+
+.B      ==HEURISTIC FILTERS
+
+        The following heuristic filters can improve accuracy when calling de novo variants but may 
+        require tuning for your particular data set.
+
+        --ctrl-abund-high
+                a variant call will be filtered out if either of the control samples has >H high abundance k-mers 
+                spanning the variant (where high abundance means > –ctrl-max); [default: H=4; set H<=0 to disable the filter] ;
+
+        --case-abund-low
+                a variant call will be filtered out if the case sample has L or more consecutive low abundance k-mers 
+                spanning the variant (where low abundance means < –case-min) [default: L=5; set L<=0 to disable the filter]
+
+        --min-like-score
+                filter out variant predictions with likelihood scores < S; by default, S = 0.0, but it’s often possible to 
+                improve specificity without sacrificing sensitivity by raising S to, for example, 50.0
+
+        --drop-outliers
+                discard terminal variant-spanning k-mers with abunance much higher than average (representing k-mers that 
+                should be in the reference genome but are not); this will increase sensitivity, but will potentially introduce 
+                many false calls as well ;
+                
+        --ambig-thresh	discard contigs that result in > A distinct, equally optimal variant calls; 
+                         [default: A = 10; set A=0 to disable this filter] ;
+
+.B      ==MISC.
+
+        --sample-labels
+                list of sample labels (with case/proband first) ;
+
+        -f, --fast-mode
+                whenever possible, stop computations prematurely for any putative variants that have already been filtered out ;
+
+        -o, --out
+        	output file; default is terminal (standard output) ;
+        
+.B      =EXAMPLES
+
 
 ----------------------------------------------------------------
 
-split :
+split: ??
 
 ----------------------------------------------------------------
 
-unband :
+unband: When kevlar is run in k-mer banding mode, the same read will typically appear in multiple
+        output files, annotated with a different set of potentially novel k-mers in each case. 
+        This command will consolidate these duplicated records across files into a single non-redundant 
+        set of reads with the complete set of novel k-mer annotations.
+
+.B      =USAGE
+
+                kevlar unband [-h] [-n N] [-o FILE] infile [infile ...]
+        
+        infile
+        	input files in augmented Fasta/Fastq format ;
+
+        -n, --n-batches
+                number of batches into which records will be split [default: 16] ; 
+                N temporary files are created and each record from the input is written 
+                to a temporary file based on its read name; then each batch is loaded into 
+                memory and duplicate records are resolved ;
+
+        -o, --out	
+                output file; default is terminal (stdout)
+
 
 ----------------------------------------------------------------
 
-varfilter :
+varfilter : ??
 
 ----------------------------------------------------------------
 
 .SH FILES
 
+To use kevlar you need some genome files in FASTA(.fa) and/or FASTQ(.fq) format.
+Download the following files to get started: 
+
+    curl -L https://s3-us-west-1.amazonaws.com/noble-trios/neon-mother-reads.fq.gz -o mother.fq.gz
+    curl -L https://s3-us-west-1.amazonaws.com/noble-trios/neon-father-reads.fq.gz -o father.fq.gz
+    curl -L https://s3-us-west-1.amazonaws.com/noble-trios/neon-proband-reads.fq.gz -o proband.fq.gz
+    curl -L https://s3-us-west-1.amazonaws.com/noble-trios/neon-refr.fa.gz -o refr.fa.gz
 
 .SH SEE ALSO
  
 .SH BUGS
 No known bugs.
+
 .SH AUTHOR
-Titus C Brown
+Daniel Standage
