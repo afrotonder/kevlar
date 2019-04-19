@@ -227,6 +227,23 @@ The kevlar call command computes a full dynamic programming alignment of each re
 
 The kevlar simlike command computes a likelihood score for each variant prediction and ranks variant calls based on this score.
 
+
+
+<h2>Some notes on workflow configuration</h2>
+
+1. An arbitrary number of Fasta/Fastq files is supported for each sample.
+
+2. Paired-end reads are not required, and any pairing information will be ignored.
+
+3. Parameters are tuned for error-corrected whole genome shotgun sequencing of human samples at ≈30x coverage. Without error correction much more memory will be required, or an alternative workflow will be required.
+
+4. kevlar will be accurate even when the k-mer counting false-positive rate (FPR) is fairly high in the case sample, as this is corrected in subsequent steps. Sensitivity will be lost if the k-mer counting FPR is too high in the control samples, however.
+
+5. The mask should include your reference genome and any potential sources of contamination. For example, UniVec includes many sources of technical contamination (such as adapters) that often cause problems.
+
+6. Accuracy can often be improved by filtering preliminary calls. Use the varfilter setting to provide a BED file of intervals from which to filter out variant predictions (by default, varfilter: null will disable this step). It's common to filter out variant calls in segmental duplications or SSRs, for example, as these are usually problematic. Also, filtering out common variants (using dbSNP, for example) will successfully remove inherited variants that are erroneously classified as de novo due to low coverage in the donor parent.
+
+
 [travisbadge]: https://img.shields.io/travis/dib-lab/kevlar.svg
 [pypibadge]: https://img.shields.io/pypi/v/biokevlar.svg
 [codecovbadge]: https://img.shields.io/codecov/c/github/dib-lab/kevlar.svg
