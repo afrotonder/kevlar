@@ -16,8 +16,9 @@ Welcome to **kevlar**, software for predicting *de novo* genetic variants withou
 kevlar's *k*-mer abundance based method calls single nucleotide variants (SNVs), multinucleotide variants (MNVs), insertion/deletion variants (indels), and structural variants (SVs) simultaneously with a single simple model.
 This software is free for use under the MIT license.
 
-You can checkout or download kevlar at our <a href='https://github.com/dib-lab/kevlar'>GitHub </a>
-Link to documentation: https://kevlar.readthedocs.io
+You can checkout or download kevlar at our <a href='https://github.com/dib-lab/kevlar'>GitHub </a> or learn how to install below.
+
+Here's a link to the kevlar documentation: https://kevlar.readthedocs.io
  
 
 <h1>Setup Virtual Environment for Kevlar</h1>
